@@ -58,7 +58,8 @@ h2{margin:0 0 10px;font-size:15px;font-weight:800;color:var(--mute);text-transfo
 #bPass{background:var(--pass);box-shadow:0 6px 0 #b45309;flex:.8}
 #bOk{background:var(--ok);box-shadow:0 6px 0 #15803d;flex:1.2}
 .actions button:active{transform:translateY(5px);box-shadow:none}
-#bPass:disabled{opacity:.25}
+#bPass:disabled{display:none}
+#bFoul{background:var(--bad);box-shadow:0 6px 0 #991b1b;flex:.55;font-size:16px;padding:18px 6px}
 #count{position:fixed;inset:0;display:none;place-items:center;font-size:40vw;font-weight:900;background:rgba(16,24,38,.94);z-index:5}
 
 /* resumen turno */
@@ -130,7 +131,7 @@ textarea{height:40vh;resize:none;user-select:text}
   <div class="top"><span class="teamTag" id="pTeam"></span><div id="timer">30</div><span id="pLeft" style="color:var(--mute)"></span></div>
   <div style="text-align:center;color:var(--mute);font-weight:800" id="pRule"></div>
   <div class="wordBox"><div id="word"></div></div>
-  <div class="actions"><button id="bPass">Pasar</button><button id="bOk">✔ ¡Sí!</button></div>
+  <div class="actions"><button id="bFoul">✖ Fallo</button><button id="bPass">Pasar</button><button id="bOk">✔ ¡Sí!</button></div>
 </section>
 <div id="count">3</div>
 
@@ -161,6 +162,13 @@ textarea{height:40vh;resize:none;user-select:text}
   <div class="row"><button class="btn ghost" id="ownClose">Cancelar</button><button class="btn" id="ownSave">Guardar</button></div>
 </div></div>
 
+<div class="modal" id="mdFoul"><div class="card" style="text-align:center">
+  <div class="big" style="margin:6px 0 4px">❌ ¿Fallo?</div>
+  <p class="sub">Se acaba el turno de este equipo y la carta vuelve al mazo.</p>
+  <button class="btn" id="fYes" style="background:var(--bad);color:#fff;box-shadow:0 5px 0 #991b1b">Sí, fallo</button>
+  <button class="btn ghost" id="fNo">No, seguir</button>
+</div></div>
+
 <div class="modal" id="mdPause"><div class="card" style="text-align:center">
   <div class="big" style="margin:6px 0 4px">⏸️ Pausa</div>
   <button class="btn" id="pzGo">Seguir</button>
@@ -174,6 +182,7 @@ textarea{height:40vh;resize:none;user-select:text}
   <p><b>Ronda 1 · Descríbelo:</b> puedes decir lo que quieras menos el nombre.</p>
   <p><b>Ronda 2 · Una palabra:</b> solo UNA palabra por carta.</p>
   <p><b>Ronda 3 · Mímica:</b> sin hablar, solo gestos y sonidos.</p>
+  <p>Si alguien se salta la regla de la ronda (dice parte del nombre, más de una palabra o habla en la mímica), pulsa <b>❌ Fallo</b>: se acaba el turno de ese equipo.</p>
   <p>Las <b>mismas cartas</b> se repiten en las tres rondas, así que fíjate bien en la primera. Cada acierto es un punto. Si el mazo se acaba en mitad de un turno, ese equipo empieza la siguiente ronda con el tiempo que le sobró.</p>
   <button class="btn" id="helpClose">Entendido</button>
 </div></div>
@@ -345,11 +354,11 @@ $('bOk').onclick=()=>{if(scr!=='play'||!T||T.paused)return;
 $('bPass').onclick=()=>{if(scr!=='play'||!T||T.paused||$('bPass').disabled)return;
   if(T.pile.length>1)T.pile.push(T.pile.shift());sfx.pass();vibrate([30,40,30]);drawWord()};
 
-function endTurn(emptied){
+function endTurn(emptied,foul){
   clearInterval(timerId);
   T.left=emptied?T.time:0;
   if(emptied){sfx.win();vibrate([80,60,80])}else{sfx.end();vibrate(400)}
-  $('teTitle').textContent=emptied?'¡Mazo terminado!':'¡Tiempo!';
+  $('teTitle').textContent=emptied?'¡Mazo terminado!':foul?'¡Fallo!':'¡Tiempo!';
   T.no=new Set();renderTurnEnd();show('turnEnd');
 }
 function renderTurnEnd(){
@@ -393,13 +402,17 @@ function roundEnd(){
 $('reGo').onclick=()=>{if(store.get('game',null))roundIntro();else newGame()};
 $('reMenu').onclick=()=>{renderMenu();show('menu')};
 
+$('bFoul').onclick=()=>{if(scr!=='play'||!T||T.paused)return;T.paused=true;vibrate(80);$('mdFoul').classList.add('on')};
+$('fNo').onclick=()=>{T.paused=false;$('mdFoul').classList.remove('on')};
+$('fYes').onclick=()=>{$('mdFoul').classList.remove('on');endTurn(false,true)};
+
 /* ===================== PAUSA / ATRÁS ===================== */
 function pause(){if(scr==='play'&&T&&!T.paused){T.paused=true;$('mdPause').classList.add('on')}}
 $('pzGo').onclick=()=>{T.paused=false;$('mdPause').classList.remove('on')};
 $('pzMenu').onclick=()=>{clearInterval(timerId);T=null;$('mdPause').classList.remove('on');renderMenu();show('menu')};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 window.backPressed=()=>{ // llamado desde Android al pulsar "atrás"
-  for(const m of document.querySelectorAll('.modal.on')){if(m.id==='mdPause'){$('pzGo').onclick()}else m.classList.remove('on');return true}
+  for(const m of document.querySelectorAll('.modal.on')){if(m.id==='mdPause'){$('pzGo').onclick()}else if(m.id==='mdFoul'){$('fNo').onclick()}else m.classList.remove('on');return true}
   if(scr==='play'){pause();return true}
   if(scr==='menu')return false;
   if(scr==='turnEnd'||$('count').style.display==='grid')return true;

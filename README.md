@@ -11,6 +11,7 @@ Un solo móvil que se pasan los equipos. Las **mismas cartas** se juegan en 3 ro
 - Al final de cada turno se pueden anular aciertos dudosos (la carta vuelve al mazo).
 - Si el mazo se acaba en mitad de un turno, ese equipo empieza la siguiente ronda con el tiempo sobrante.
 - Pasar desactivado en la ronda 1 (como el original), activable en ajustes.
+- Botón **✖ Fallo** (con confirmación) que acaba el turno si alguien se salta la regla de la ronda.
 - La partida se guarda al terminar cada turno: si se cierra la app, "Continuar partida".
 - Pausa automática al salir de la app o con el botón atrás.
 
