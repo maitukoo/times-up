@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.TimesUp" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+    </style>
+    <color name="bg">#101826</color>
+    <color name="accent">#FFD23F</color>
+</resources>

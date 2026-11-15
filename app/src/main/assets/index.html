@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#101826">
+<title>Time's Up</title>
+<style>
+:root{--bg:#101826;--panel:#1b2638;--panel2:#24324a;--ink:#f6f8ff;--mute:#9fb0c9;--ok:#22c55e;--pass:#f97316;--bad:#ef4444;--accent:#38d6c4;--r:20px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;user-select:none;-webkit-user-select:none}
+input,textarea{font:inherit;color:var(--ink);background:var(--panel2);border:2px solid transparent;border-radius:14px;padding:12px 14px;outline:none;width:100%}
+input:focus,textarea:focus{border-color:var(--accent)}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;overflow-y:auto;padding:max(18px,env(safe-area-inset-top)) 18px max(22px,env(safe-area-inset-bottom))}
+.screen.on{display:flex}
+.center{align-items:center;justify-content:center;text-align:center}
+h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.5px}
+h2{margin:0 0 10px;font-size:15px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.8px}
+.sub{color:var(--mute);font-size:15px;margin:6px 0 0}
+.btn{display:block;width:100%;padding:17px;border-radius:18px;font-size:19px;font-weight:900;background:var(--accent);color:#08201d;box-shadow:0 5px 0 #1f9d8f;margin-top:12px}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #1f9d8f}
+.btn.ghost{background:var(--panel2);color:var(--ink);box-shadow:0 5px 0 #121b2a}
+.btn.ghost:active{box-shadow:0 1px 0 #121b2a}
+.btn:disabled{opacity:.4}
+.card{background:var(--panel);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:10px 14px;border-radius:999px;background:var(--panel2);font-weight:700;font-size:15px}
+.chip.sel{background:var(--accent);color:#08201d}
+.row{display:flex;gap:10px;align-items:center}
+.grow{flex:1}
+
+/* menú */
+.brand{display:flex;flex-direction:column;align-items:center;margin:4vh 0 3vh}
+.logo{width:96px;height:96px;border-radius:28px;background:var(--accent);display:grid;place-items:center;font-size:56px;transform:rotate(-6deg);box-shadow:0 8px 0 #1f9d8f;margin-bottom:18px}
+.menuBtns{width:100%;max-width:420px;margin:0 auto}
+
+/* equipos */
+.team{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.dot{width:16px;height:16px;border-radius:50%;flex:none}
+.x{width:44px;height:44px;border-radius:12px;background:var(--panel2);font-size:20px;flex:none}
+
+/* juego */
+.big{font-size:clamp(34px,10vw,64px);font-weight:900;line-height:1.05;letter-spacing:-1px}
+.teamTag{display:inline-block;padding:8px 16px;border-radius:999px;font-weight:900;font-size:18px;color:#fff}
+.rule{background:var(--panel);border-radius:var(--r);padding:18px;margin:18px 0;max-width:460px}
+.rule b{color:var(--accent)}
+#play{padding:0}
+.top{display:flex;justify-content:space-between;align-items:center;padding:max(14px,env(safe-area-inset-top)) 18px 10px;font-weight:800}
+#timer{font-size:44px;font-weight:900;font-variant-numeric:tabular-nums;min-width:80px;text-align:center;border-radius:16px;padding:2px 10px;background:rgba(0,0,0,.25)}
+#timer.hurry{background:var(--bad);animation:pulse .5s infinite alternate}
+@keyframes pulse{to{transform:scale(1.08)}}
+.wordBox{flex:1;display:flex;align-items:center;justify-content:center;padding:10px 22px;text-align:center}
+#word{font-weight:900;line-height:1.05;letter-spacing:-1px;background:#fff;color:#101826;border-radius:26px;padding:34px 22px;width:100%;max-width:560px;box-shadow:0 10px 0 rgba(0,0,0,.25);transition:transform .12s}
+#word.pop{transform:scale(.94)}
+.actions{display:flex;gap:12px;padding:10px 18px max(18px,env(safe-area-inset-bottom))}
+.actions button{flex:1;padding:26px 10px;border-radius:22px;font-size:22px;font-weight:900;color:#fff}
+#bPass{background:var(--pass);box-shadow:0 6px 0 #b45309;flex:.8}
+#bOk{background:var(--ok);box-shadow:0 6px 0 #15803d;flex:1.2}
+.actions button:active{transform:translateY(5px);box-shadow:none}
+#bPass:disabled{opacity:.25}
+#count{position:fixed;inset:0;display:none;place-items:center;font-size:40vw;font-weight:900;background:rgba(16,24,38,.94);z-index:5}
+
+/* resumen turno */
+.guess{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border-radius:14px;padding:14px 16px;margin-bottom:8px;font-weight:800;font-size:18px}
+.guess.no{opacity:.45;text-decoration:line-through}
+.guess span{font-size:22px}
+table{width:100%;border-collapse:collapse;font-weight:800}
+td,th{padding:10px 6px;text-align:center}
+th{color:var(--mute);font-size:13px}
+td:first-child,th:first-child{text-align:left}
+tr+tr td{border-top:1px solid var(--panel2)}
+.tot{font-size:22px;color:var(--accent)}
+.win{font-size:72px;margin:10px 0}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal.on{display:flex}
+.modal .card{width:100%;max-width:440px;margin:0}
+textarea{height:40vh;resize:none;user-select:text}
+.help p{margin:8px 0;line-height:1.4}
+</style>
+</head>
+<body>
+
+<!-- MENÚ -->
+<section class="screen on" id="menu">
+  <div class="brand"><div class="logo">⏳</div><h1>Time's Up</h1><p class="sub">Describe · Una palabra · Mímica</p></div>
+  <div class="menuBtns">
+    <button class="btn" id="mNew">Nueva partida</button>
+    <button class="btn ghost" id="mCont" style="display:none">Continuar partida</button>
+    <button class="btn ghost" id="mOwn">✏️ Cartas propias</button>
+    <button class="btn ghost" id="mHelp">❓ Cómo se juega</button>
+    <div class="chips" style="justify-content:center;margin-top:18px"><button class="chip" id="tSound">🔊 Sonido</button></div>
+  </div>
+</section>
+
+<!-- CONFIGURAR -->
+<section class="screen" id="setup">
+  <div class="row" style="margin-bottom:14px"><button class="x" id="sBack">←</button><h1 class="grow" style="font-size:24px">Nueva partida</h1></div>
+  <div class="card"><h2>Equipos</h2><div id="teams"></div><button class="chip" id="addTeam">+ Añadir equipo</button></div>
+  <div class="card"><h2>Tiempo por turno</h2><div class="chips" id="durs"></div></div>
+  <div class="card"><h2>Número de cartas</h2><div class="chips" id="nCards"></div></div>
+  <div class="card"><h2>Mazos</h2><div class="chips" id="cats"></div><p class="sub" id="ownInfo"></p></div>
+  <div class="card"><h2>Reglas</h2><div class="chips"><button class="chip" id="tPass1">⏭️ Se puede pasar en la ronda 1</button></div></div>
+  <button class="btn" id="sGo">¡A jugar!</button>
+</section>
+
+<!-- INICIO DE RONDA -->
+<section class="screen center" id="roundIntro">
+  <h2 id="riNum">Ronda 1 de 3</h2>
+  <div class="big" id="riTitle">Descríbelo</div>
+  <div class="rule" id="riRule"></div>
+  <div class="card" style="width:100%;max-width:460px" id="riScore"></div>
+  <button class="btn" style="max-width:460px" id="riGo">Vamos</button>
+</section>
+
+<!-- TURNO LISTO -->
+<section class="screen center" id="turnReady">
+  <h2 id="trRound"></h2>
+  <p class="sub" style="margin-bottom:10px">Pasa el móvil a</p>
+  <div class="teamTag" id="trTeam" style="font-size:30px;padding:12px 26px"></div>
+  <div class="rule" id="trInfo"></div>
+  <button class="btn" style="max-width:460px" id="trGo">¡Empezar!</button>
+  <button class="btn ghost" style="max-width:460px" id="trMenu">Menú</button>
+</section>
+
+<!-- JUGANDO -->
+<section class="screen" id="play">
+  <div class="top"><span class="teamTag" id="pTeam"></span><div id="timer">30</div><span id="pLeft" style="color:var(--mute)"></span></div>
+  <div style="text-align:center;color:var(--mute);font-weight:800" id="pRule"></div>
+  <div class="wordBox"><div id="word"></div></div>
+  <div class="actions"><button id="bPass">Pasar</button><button id="bOk">✔ ¡Sí!</button></div>
+</section>
+<div id="count">3</div>
+
+<!-- FIN DE TURNO -->
+<section class="screen" id="turnEnd">
+  <div class="big" style="text-align:center;margin:10px 0" id="teTitle">¡Tiempo!</div>
+  <p class="sub" style="text-align:center;margin-bottom:14px">Toca una carta si no valía (vuelve al mazo)</p>
+  <div id="teList"></div>
+  <div style="text-align:center;font-weight:900;font-size:22px;margin:10px 0" id="tePts"></div>
+  <button class="btn" id="teGo">Siguiente</button>
+</section>
+
+<!-- FIN DE RONDA / PARTIDA -->
+<section class="screen center" id="roundEnd">
+  <div class="win" id="reEm">🏁</div>
+  <div class="big" id="reTitle"></div>
+  <p class="sub" id="reSub"></p>
+  <div class="card" style="width:100%;max-width:460px;margin-top:16px" id="reScore"></div>
+  <button class="btn" style="max-width:460px" id="reGo"></button>
+  <button class="btn ghost" style="max-width:460px;display:none" id="reMenu">Menú</button>
+</section>
+
+<!-- MODALES -->
+<div class="modal" id="mdOwn"><div class="card">
+  <h2>Cartas propias</h2>
+  <p class="sub" style="margin:0 0 10px">Una por línea (famosos, amigos, personajes...). Se guardan en el móvil.</p>
+  <textarea id="ownTxt" placeholder="Mi suegra&#10;El Txomin del bar&#10;Chiquito de la Calzada"></textarea>
+  <div class="row"><button class="btn ghost" id="ownClose">Cancelar</button><button class="btn" id="ownSave">Guardar</button></div>
+</div></div>
+
+<div class="modal" id="mdPause"><div class="card" style="text-align:center">
+  <div class="big" style="margin:6px 0 4px">⏸️ Pausa</div>
+  <button class="btn" id="pzGo">Seguir</button>
+  <button class="btn ghost" id="pzMenu">Salir al menú</button>
+  <p class="sub">Si sales se pierde este turno, pero la partida queda guardada.</p>
+</div></div>
+
+<div class="modal" id="mdHelp"><div class="card help">
+  <h2>Cómo se juega</h2>
+  <p>Se juega por equipos con <b>un solo móvil</b> que se van pasando. En cada turno, un jugador ve las cartas y su equipo tiene que adivinarlas antes de que acabe el tiempo.</p>
+  <p><b>Ronda 1 · Descríbelo:</b> puedes decir lo que quieras menos el nombre.</p>
+  <p><b>Ronda 2 · Una palabra:</b> solo UNA palabra por carta.</p>
+  <p><b>Ronda 3 · Mímica:</b> sin hablar, solo gestos y sonidos.</p>
+  <p>Las <b>mismas cartas</b> se repiten en las tres rondas, así que fíjate bien en la primera. Cada acierto es un punto. Si el mazo se acaba en mitad de un turno, ese equipo empieza la siguiente ronda con el tiempo que le sobró.</p>
+  <button class="btn" id="helpClose">Entendido</button>
+</div></div>
+
+<script>
+/* ===================== MAZOS ===================== */
+const CATS=[
+ {id:'es',name:'🇪🇸 Famosos de aquí',w:`Rosalía,Rafa Nadal,Fernando Alonso,Pau Gasol,Iker Casillas,Julio Iglesias,Enrique Iglesias,Lola Flores,Antonio Banderas,Penélope Cruz,Javier Bardem,Pedro Almodóvar,Alejandro Sanz,Raphael,Rocío Jurado,Isabel Pantoja,David Bisbal,Aitana,Ibai Llanos,El Rubius,Karlos Arguiñano,David Broncano,Pablo Motos,Jordi Hurtado,Chiquito de la Calzada,Paco de Lucía,Camarón,Carlos Alcaraz,Marc Márquez,Andrés Iniesta,Sergio Ramos,Alexia Putellas,Miguel Induráin,Seve Ballesteros,Mireia Belmonte,Ana Obregón,Belén Esteban,Paquirrin,Bertín Osborne,Santiago Segura,Dani Rovira,Karra Elejalde,Mario Casas,Úrsula Corberó,Joaquín Sabina,Joan Manuel Serrat,Estopa,Melendi,Bustamante,Pablo Alborán,Malú,C. Tangana,Quevedo,Lola Índigo,Rosa de España,Chenoa,Risto Mejide,Jesús Calleja,Iñaki Gabilondo,Mercedes Milá,Ramón García,Los del Río`},
+ {id:'int',name:'🌍 Famosos del mundo',w:`Messi,Cristiano Ronaldo,Shakira,Taylor Swift,Beyoncé,Madonna,Michael Jackson,Elvis Presley,Freddie Mercury,Marilyn Monroe,Charles Chaplin,Leonardo DiCaprio,Brad Pitt,Angelina Jolie,Tom Cruise,Arnold Schwarzenegger,Sylvester Stallone,Jackie Chan,Will Smith,Johnny Depp,Steven Spielberg,Walt Disney,Lady Gaga,Rihanna,Justin Bieber,Ed Sheeran,Bad Bunny,Karol G,Elon Musk,Mark Zuckerberg,Bill Gates,Steve Jobs,Kim Kardashian,Oprah Winfrey,Barack Obama,Donald Trump,Papa Francisco,Reina Isabel II,Lady Di,Príncipe Harry,Michael Jordan,Usain Bolt,Muhammad Ali,Roger Federer,Serena Williams,Lewis Hamilton,Michael Phelps,Maradona,Pelé,Mbappé,Neymar,Zidane,Mr. Bean,Morgan Freeman,Julia Roberts,Meryl Streep,Keanu Reeves,Dwayne Johnson,Eminem,Mick Jagger,John Lennon,Bob Marley`},
+ {id:'fic',name:'🦸 Personajes de ficción',w:`Harry Potter,Darth Vader,Bob Esponja,Mickey Mouse,Spiderman,Batman,Superman,Shrek,Homer Simpson,Bart Simpson,Super Mario,Pikachu,Sonic,Pac-Man,Lara Croft,Sherlock Holmes,Drácula,Frankenstein,Caperucita Roja,Blancanieves,Cenicienta,Pinocho,Peter Pan,Capitán Garfio,Tarzán,Simba,Nemo,Dory,Buzz Lightyear,Woody,Elsa,Olaf,Rapunzel,Aladdín,Jack Sparrow,Indiana Jones,James Bond,Rocky Balboa,Terminator,Gollum,Gandalf,Yoda,Chewbacca,E.T.,King Kong,Don Quijote,Sancho Panza,Mortadelo,Astérix,Obélix,Tintín,Heidi,Doraemon,Son Goku,Pocoyó,Peppa Pig,Barbie,Papá Noel,Ratoncito Pérez,Olentzero,Hulk,Iron Man,Wonder Woman,Joker,Gru,Garfield,Snoopy,Popeye,Pantera Rosa,Scooby-Doo,Pitufo,Willy Wonka,Mary Poppins,Cruella de Vil,Hannibal Lecter,Wally,Bob el Constructor,Los Teletubbies`},
+ {id:'his',name:'📜 Históricos',w:`Albert Einstein,Cleopatra,Napoleón,Picasso,Cristóbal Colón,Leonardo da Vinci,Mozart,Beethoven,Frida Kahlo,Salvador Dalí,Cervantes,Shakespeare,Gandhi,Marie Curie,Isaac Newton,Charles Darwin,Julio César,Nikola Tesla,Thomas Edison,Galileo Galilei,Aristóteles,Sócrates,Alejandro Magno,Juana de Arco,Isabel la Católica,Nelson Mandela,Martin Luther King,Abraham Lincoln,Neil Armstrong,Yuri Gagarin,Stephen Hawking,Van Gogh,Miguel Ángel,Velázquez,Goya,Che Guevara,Fidel Castro,Hernán Cortés,Atila,Gengis Kan,Marco Polo,Tutankamón,Nerón,Rey Arturo,Robin Hood,El Cid,Viriato,Blas de Lezo,Juan Sebastián Elcano,San Ignacio de Loyola,Hitchcock,Agatha Christie,Lorca,García Márquez,Pablo Neruda,Charles Dickens,Julio Verne,Sigmund Freud,Karl Marx,Teresa de Calcuta`},
+ {id:'dep',name:'⚽ Deportistas',w:`Messi,Cristiano Ronaldo,Rafa Nadal,Fernando Alonso,Pau Gasol,Iker Casillas,Carlos Alcaraz,Marc Márquez,Andrés Iniesta,Xavi Hernández,Sergio Ramos,Alexia Putellas,Aitana Bonmatí,Miguel Induráin,Alberto Contador,Carolina Marín,Mireia Belmonte,Ricky Rubio,Luka Doncic,Michael Jordan,LeBron James,Kobe Bryant,Usain Bolt,Muhammad Ali,Mike Tyson,Roger Federer,Novak Djokovic,Serena Williams,Lewis Hamilton,Max Verstappen,Valentino Rossi,Michael Phelps,Simone Biles,Nadia Comaneci,Tiger Woods,Seve Ballesteros,Maradona,Pelé,Zidane,Ronaldinho,Ronaldo Nazario,Mbappé,Neymar,Haaland,Lamine Yamal,Iñaki Williams,Nico Williams,Julen Guerrero,Aduriz,Bebeto,Kepa,Jon Rahm,Garbiñe Muguruza,Rudy Fernández,Sergio Scariolo,Pep Guardiola,Mourinho,Ancelotti,Luis Aragonés,Del Bosque`},
+ {id:'mus',name:'🎤 Música',w:`Rosalía,Shakira,Bad Bunny,Taylor Swift,Beyoncé,Madonna,Michael Jackson,Elvis Presley,Freddie Mercury,The Beatles,Rolling Stones,ABBA,Queen,AC/DC,Metallica,Nirvana,Coldplay,U2,Bon Jovi,Bruce Springsteen,Bob Dylan,Prince,David Bowie,Whitney Houston,Tina Turner,Celine Dion,Adele,Lady Gaga,Rihanna,Dua Lipa,Billie Eilish,Harry Styles,Justin Bieber,Ed Sheeran,Daddy Yankee,J Balvin,Karol G,Maluma,Ricky Martin,Luis Miguel,Juanes,Camilo Sesto,Raphael,Julio Iglesias,Alejandro Sanz,Mecano,Héroes del Silencio,Fito y Fitipaldis,Extremoduro,Marea,El Canto del Loco,La Oreja de Van Gogh,Amaral,Estopa,Melendi,Pablo Alborán,David Bisbal,Aitana,Mikel Erentxun,Kortatu,Su Ta Gar,Berri Txarrak,Ken Zazpi,Itoiz`},
+];
+CATS.forEach(c=>c.words=[...new Set(c.w.split(',').map(s=>s.trim()).filter(Boolean))]);
+const COLORS=['#ef4444','#3b82f6','#22c55e','#eab308','#a855f7','#f97316'];
+const ROUNDS=[
+ {t:'Descríbelo',r:'Di <b>lo que quieras</b> para que tu equipo lo adivine, pero <b>sin decir el nombre</b> ni partes de él.'},
+ {t:'Una palabra',r:'Solo puedes decir <b>UNA palabra</b> por carta. Piensa bien cuál, ¡las cartas son las mismas de la ronda 1!'},
+ {t:'Mímica',r:'<b>Sin hablar.</b> Solo gestos y sonidos. Tu equipo puede decir todos los nombres que quiera.'}
+];
+
+/* ===================== UTILIDADES ===================== */
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem('tu_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+             set(k,v){try{localStorage.setItem('tu_'+k,JSON.stringify(v))}catch(e){}},
+             del(k){try{localStorage.removeItem('tu_'+k)}catch(e){}}};
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function vibrate(ms){try{if(window.Android&&Android.vibrate)Android.vibrate(JSON.stringify(ms));else if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+let ac=null;
+function audio(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ac&&ac.state==='suspended')ac.resume();return ac}
+function tone(f,t0,d,type='sine',vol=.25){const a=audio();if(!a||!S.sound)return;const o=a.createOscillator(),g=a.createGain();
+  o.type=type;o.frequency.value=f;const t=a.currentTime+t0;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);
+  g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.02)}
+const sfx={ok(){tone(660,0,.12,'triangle');tone(990,.1,.22,'triangle')},pass(){tone(220,0,.25,'sawtooth',.12)},
+  tick(){tone(1200,0,.05,'square',.08)},beep(){tone(520,0,.18,'square',.12)},go(){tone(880,0,.35,'square',.14)},
+  end(){tone(392,0,.2,'sawtooth',.15);tone(330,.18,.2,'sawtooth',.15);tone(262,.36,.5,'sawtooth',.15)},
+  win(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.13,.3,'triangle'))}};
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));scr=id;$(id).scrollTop=0}
+let scr='menu';
+
+/* ===================== AJUSTES ===================== */
+const S=Object.assign({sound:true,dur:45,n:40,cats:['es','int','fic'],pass1:false,
+  teams:['Equipo 1','Equipo 2']},store.get('settings',{}));
+const saveS=()=>store.set('settings',S);
+let own=store.get('own',[]);
+
+/* ===================== MENÚ ===================== */
+function renderMenu(){
+  $('tSound').classList.toggle('sel',S.sound);
+  $('mCont').style.display=store.get('game',null)?'block':'none';
+}
+$('tSound').onclick=()=>{S.sound=!S.sound;saveS();renderMenu()};
+$('mNew').onclick=()=>{audio();renderSetup();show('setup')};
+$('mCont').onclick=()=>{audio();G=store.get('game',null);if(G)resume()};
+$('mOwn').onclick=()=>{$('ownTxt').value=own.join('\n');$('mdOwn').classList.add('on')};
+$('ownClose').onclick=()=>$('mdOwn').classList.remove('on');
+$('ownSave').onclick=()=>{own=[...new Set($('ownTxt').value.split(/\n+/).map(s=>s.trim()).filter(Boolean))];
+  store.set('own',own);$('mdOwn').classList.remove('on');if(scr==='setup')renderSetup()};
+$('mHelp').onclick=()=>$('mdHelp').classList.add('on');
+$('helpClose').onclick=()=>$('mdHelp').classList.remove('on');
+
+/* ===================== CONFIGURAR ===================== */
+function renderSetup(){
+  const t=$('teams');t.innerHTML='';
+  S.teams.forEach((name,i)=>{
+    const d=document.createElement('div');d.className='team';
+    d.innerHTML=`<span class="dot" style="background:${COLORS[i]}"></span><input value="${esc(name)}" maxlength="18">`+
+      (S.teams.length>2?`<button class="x">✕</button>`:'');
+    d.querySelector('input').oninput=e=>{S.teams[i]=e.target.value;saveS()};
+    const x=d.querySelector('.x');if(x)x.onclick=()=>{S.teams.splice(i,1);saveS();renderSetup()};
+    t.appendChild(d);
+  });
+  $('addTeam').style.display=S.teams.length<6?'':'none';
+  chips('durs',[30,45,60,90],S.dur,v=>v+' s',v=>{S.dur=v});
+  chips('nCards',[20,30,40,50,60],S.n,v=>v,v=>{S.n=v});
+  const c=$('cats');c.innerHTML='';
+  [...CATS,{id:'own',name:'✏️ Cartas propias'}].forEach(cat=>{
+    const b=document.createElement('button');b.className='chip'+(S.cats.includes(cat.id)?' sel':'');
+    b.textContent=cat.name+(cat.id==='own'?` (${own.length})`:'');
+    b.onclick=()=>{if(cat.id==='own'&&!own.length){$('mOwn').onclick();return}
+      S.cats=S.cats.includes(cat.id)?S.cats.filter(x=>x!==cat.id):[...S.cats,cat.id];saveS();renderSetup()};
+    c.appendChild(b);
+  });
+  const pool=buildPool();
+  $('ownInfo').textContent=S.cats.includes('own')&&own.length?`Tus ${own.length} cartas propias entran primero; el resto se rellena con los mazos.`:
+    `${pool.length} cartas disponibles en los mazos elegidos.`;
+  $('tPass1').classList.toggle('sel',S.pass1);
+  $('sGo').disabled=pool.length+(S.cats.includes('own')?own.length:0)<5;
+}
+function chips(id,vals,cur,label,set){const el=$(id);el.innerHTML='';
+  vals.forEach(v=>{const b=document.createElement('button');b.className='chip'+(v===cur?' sel':'');b.textContent=label(v);
+    b.onclick=()=>{set(v);saveS();renderSetup()};el.appendChild(b)})}
+function buildPool(){const s=new Set();CATS.forEach(c=>{if(S.cats.includes(c.id))c.words.forEach(w=>s.add(w))});return [...s]}
+$('addTeam').onclick=()=>{S.teams.push('Equipo '+(S.teams.length+1));saveS();renderSetup()};
+$('tPass1').onclick=()=>{S.pass1=!S.pass1;saveS();renderSetup()};
+$('sBack').onclick=()=>{renderMenu();show('menu')};
+$('sGo').onclick=()=>newGame();
+
+/* ===================== PARTIDA ===================== */
+// G se guarda al final de cada turno: si se cierra la app se puede continuar.
+let G=null;
+function newGame(sameTeams){
+  const mine=S.cats.includes('own')?shuffle(own):[];
+  const rest=shuffle(buildPool().filter(w=>!mine.includes(w)));
+  const deck=[...mine,...rest].slice(0,S.n);
+  G={teams:S.teams.map((n,i)=>({name:n.trim()||'Equipo '+(i+1),color:COLORS[i],pts:[0,0,0]})),
+     deck,round:0,pile:shuffle(deck),cur:0,bonus:0,dur:S.dur,pass1:S.pass1};
+  store.set('game',G);roundIntro();
+}
+function resume(){if(G.pile.length===G.deck.length&&G.teams.every(t=>t.pts[G.round]===0))roundIntro();else turnReady()}
+const team=()=>G.teams[G.cur];
+function scoreTable(round){
+  const show3=round==null?G.round:round;
+  let h=`<table><tr><th>Equipo</th>${[0,1,2].map(r=>r<=show3?`<th>R${r+1}</th>`:'').join('')}<th>Total</th></tr>`;
+  G.teams.forEach(t=>{h+=`<tr><td><span class="dot" style="display:inline-block;background:${t.color};margin-right:8px"></span>${esc(t.name)}</td>`+
+    [0,1,2].map(r=>r<=show3?`<td>${t.pts[r]}</td>`:'').join('')+`<td class="tot">${t.pts.reduce((a,b)=>a+b,0)}</td></tr>`});
+  return h+'</table>';
+}
+function roundIntro(){
+  $('riNum').textContent=`Ronda ${G.round+1} de 3 · ${G.deck.length} cartas`;
+  $('riTitle').textContent=ROUNDS[G.round].t;$('riRule').innerHTML=ROUNDS[G.round].r;
+  $('riScore').style.display=G.round?'block':'none';$('riScore').innerHTML=G.round?scoreTable(G.round-1):'';
+  show('roundIntro');
+}
+$('riGo').onclick=()=>turnReady();
+function turnReady(){
+  const t=team();
+  $('trRound').textContent=`Ronda ${G.round+1} · ${ROUNDS[G.round].t}`;
+  $('trTeam').textContent=t.name;$('trTeam').style.background=t.color;
+  const secs=G.bonus||G.dur;
+  $('trInfo').innerHTML=`Quedan <b>${G.pile.length}</b> cartas en el mazo.<br>Tienes <b>${secs} segundos</b>`+
+    (G.bonus?' (el tiempo que os sobró en la ronda anterior)':'')+'.<br><br>'+ROUNDS[G.round].r;
+  show('turnReady');
+}
+$('trMenu').onclick=()=>{renderMenu();show('menu')};
+$('trGo').onclick=()=>{audio();countdown()};
+
+let T=null,timerId=null;
+function countdown(){
+  const el=$('count');el.style.display='grid';let n=3;el.textContent=n;sfx.beep();vibrate(60);
+  const iv=setInterval(()=>{n--;if(n>0){el.textContent=n;sfx.beep();vibrate(60)}else{clearInterval(iv);el.style.display='none';startTurn()}},850);
+}
+function startTurn(){
+  T={pile:G.pile.slice(),got:[],time:G.bonus||G.dur,paused:false};
+  G.bonus=0;
+  $('pTeam').textContent=team().name;$('pTeam').style.background=team().color;
+  $('pRule').textContent=`Ronda ${G.round+1} · ${ROUNDS[G.round].t}`;
+  $('play').style.background=`linear-gradient(180deg,${team().color}55,var(--bg) 60%)`;
+  $('bPass').disabled=G.round===0&&!G.pass1;
+  $('timer').classList.remove('hurry');
+  show('play');sfx.go();vibrate(150);drawWord();tickUI();
+  clearInterval(timerId);timerId=setInterval(tick,1000);
+}
+function tick(){if(T.paused)return;T.time--;tickUI();
+  if(T.time<=10&&T.time>0){sfx.tick();if(T.time<=5)vibrate(40)}
+  if(T.time<=0)endTurn(false)}
+function tickUI(){$('timer').textContent=Math.max(0,T.time);$('timer').classList.toggle('hurry',T.time<=10);
+  $('pLeft').textContent=T.pile.length+' 🃏'}
+function drawWord(){
+  const w=T.pile[0]||'';const el=$('word');el.textContent=w;
+  el.style.fontSize=(w.length>22?30:w.length>14?40:w.length>8?50:60)+'px';
+  el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),110);
+}
+$('bOk').onclick=()=>{if(scr!=='play'||!T||T.paused)return;
+  T.got.push(T.pile.shift());sfx.ok();vibrate(50);
+  if(!T.pile.length){endTurn(true);return}drawWord();tickUI()};
+$('bPass').onclick=()=>{if(scr!=='play'||!T||T.paused||$('bPass').disabled)return;
+  if(T.pile.length>1)T.pile.push(T.pile.shift());sfx.pass();vibrate([30,40,30]);drawWord()};
+
+function endTurn(emptied){
+  clearInterval(timerId);
+  T.left=emptied?T.time:0;
+  if(emptied){sfx.win();vibrate([80,60,80])}else{sfx.end();vibrate(400)}
+  $('teTitle').textContent=emptied?'¡Mazo terminado!':'¡Tiempo!';
+  T.no=new Set();renderTurnEnd();show('turnEnd');
+}
+function renderTurnEnd(){
+  const l=$('teList');l.innerHTML=T.got.length?'':'<p class="sub" style="text-align:center">Ningún acierto este turno 😅</p>';
+  T.got.forEach((w,i)=>{const d=document.createElement('div');d.className='guess'+(T.no.has(i)?' no':'');
+    d.innerHTML=`${esc(w)}<span>${T.no.has(i)?'↩️':'✅'}</span>`;
+    d.onclick=()=>{T.no.has(i)?T.no.delete(i):T.no.add(i);renderTurnEnd()};l.appendChild(d)});
+  const pts=T.got.length-T.no.size;
+  $('tePts').innerHTML=`<span style="color:${team().color}">${esc(team().name)}</span> +${pts} punto${pts===1?'':'s'}`;
+}
+$('teGo').onclick=()=>{
+  const back=T.got.filter((w,i)=>T.no.has(i));
+  team().pts[G.round]+=T.got.length-back.length;
+  G.pile=shuffle([...T.pile,...back]);
+  if(!G.pile.length){
+    // Ronda terminada: el equipo que la cerró empieza la siguiente con el tiempo sobrante
+    if(T.left>=3)G.bonus=T.left;else{G.bonus=0;G.cur=(G.cur+1)%G.teams.length}
+    T=null;roundEnd();
+  }else{G.bonus=0;G.cur=(G.cur+1)%G.teams.length;T=null;store.set('game',G);turnReady()}
+};
+function roundEnd(){
+  const last=G.round===2;
+  if(!last){G.round++;G.pile=shuffle(G.deck);store.set('game',G)}else store.del('game');
+  const r=last?2:G.round-1;
+  $('reScore').innerHTML=scoreTable(r);
+  $('reMenu').style.display=last?'block':'none';
+  if(last){
+    const tot=G.teams.map(t=>t.pts.reduce((a,b)=>a+b,0));const max=Math.max(...tot);
+    const w=G.teams.filter((t,i)=>tot[i]===max);
+    $('reEm').textContent='🏆';
+    $('reTitle').textContent=w.length>1?'¡Empate!':w[0].name;
+    $('reSub').textContent=w.length>1?w.map(t=>t.name).join(' y ')+` con ${max} puntos`:`gana con ${max} puntos`;
+    $('reGo').textContent='Revancha (cartas nuevas)';sfx.win();vibrate([100,80,100,80,200]);
+  }else{
+    $('reEm').textContent='🏁';$('reTitle').textContent=`Fin de la ronda ${r+1}`;
+    $('reSub').textContent=G.bonus?`${team().name} empieza la siguiente con ${G.bonus} s`:'';
+    $('reGo').textContent=`Ronda ${G.round+1}: ${ROUNDS[G.round].t}`;
+  }
+  show('roundEnd');
+}
+$('reGo').onclick=()=>{if(store.get('game',null))roundIntro();else newGame()};
+$('reMenu').onclick=()=>{renderMenu();show('menu')};
+
+/* ===================== PAUSA / ATRÁS ===================== */
+function pause(){if(scr==='play'&&T&&!T.paused){T.paused=true;$('mdPause').classList.add('on')}}
+$('pzGo').onclick=()=>{T.paused=false;$('mdPause').classList.remove('on')};
+$('pzMenu').onclick=()=>{clearInterval(timerId);T=null;$('mdPause').classList.remove('on');renderMenu();show('menu')};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
+window.backPressed=()=>{ // llamado desde Android al pulsar "atrás"
+  for(const m of document.querySelectorAll('.modal.on')){if(m.id==='mdPause'){$('pzGo').onclick()}else m.classList.remove('on');return true}
+  if(scr==='play'){pause();return true}
+  if(scr==='menu')return false;
+  if(scr==='turnEnd'||$('count').style.display==='grid')return true;
+  renderMenu();show('menu');return true;
+};
+
+renderMenu();
+</script>
+</body>
+</html>

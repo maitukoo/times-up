@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Reloj de arena -->
+    <group android:rotation="-8" android:pivotX="54" android:pivotY="54">
+        <path android:fillColor="#38D6C4" android:pathData="M34,28h40a3,3 0,0 1,0 6h-40a3,3 0,0 1,0 -6z M34,74h40a3,3 0,0 1,0 6h-40a3,3 0,0 1,0 -6z"/>
+        <path android:fillColor="#F6F8FF" android:pathData="M38,34h32c0,12 -10,16 -12,20c2,4 12,8 12,20h-32c0,-12 10,-16 12,-20c-2,-4 -12,-8 -12,-20z"/>
+        <path android:fillColor="#F97316" android:pathData="M44,40h20c-2,5 -8,8 -10,11c-2,-3 -8,-6 -10,-11z M42,72c1,-6 8,-9 12,-12c4,3 11,6 12,12z"/>
+    </group>
+</vector>

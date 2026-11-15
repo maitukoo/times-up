@@ -1,0 +1,30 @@
+name: Compilar APK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - name: Descifrar clave de firma
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_PASSWORD" ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -in keystore/alafrente.jks.enc -out "$RUNNER_TEMP/alafrente.jks" -pass env:KEYSTORE_PASSWORD
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/alafrente.jks" >> "$GITHUB_ENV"
+            echo "Firmando con la clave de Oscar"
+          else
+            echo "::warning::Falta el secreto KEYSTORE_PASSWORD: se firma con la clave debug"
+          fi
+      - name: Compilar
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: chmod +x gradlew && ./gradlew assembleRelease
+      - name: Comprobar firma
+        run: $ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)/apksigner verify --print-certs app/build/outputs/apk/release/*.apk | head -3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TimesUp-apk
+          path: app/build/outputs/apk/release/*.apk
